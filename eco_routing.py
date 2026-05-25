@@ -26,16 +26,22 @@ def load_edges_dataset() -> gpd.GeoDataFrame:
     )
 
 
-# ----------------------------
-# Load your fused dataset
-# ----------------------------
-edges = load_edges_dataset()
+_EDGES_CACHE: Optional[gpd.GeoDataFrame] = None
+
+
+def get_edges_dataset() -> gpd.GeoDataFrame:
+    """Lazy-load and cache the fused dataset so imports don't fail."""
+    global _EDGES_CACHE
+    if _EDGES_CACHE is None:
+        _EDGES_CACHE = load_edges_dataset()
+    return _EDGES_CACHE
 
 # ----------------------------
 # Build graph with carbon cost
 # ----------------------------
 def build_carbon_graph():
     """Create network graph with carbon cost as edge weight"""
+    edges = get_edges_dataset()
     G = nx.MultiDiGraph()
     
     for idx, row in edges.iterrows():
@@ -168,6 +174,7 @@ def _plot_route_comparison(
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
     try:
+        edges = get_edges_dataset()
         edges.plot(ax=ax, color="lightgray", linewidth=0.5, alpha=0.6)
     except Exception:
         pass
@@ -190,60 +197,75 @@ def _plot_route_comparison(
     plt.close(fig)
 
 
-def compare_routes(origin, destination, plot_path: Optional[str] = None, show_plot: bool = False):
-    """Compare different routing strategies"""
+def compare_routes_data(origin: int, destination: int) -> Dict[str, object]:
+    """Return route comparison results without printing."""
     G = build_carbon_graph()
-    
-    print(f"\n{'='*60}")
-    print(f"Route Comparison: Origin {origin} → Destination {destination}")
-    print(f"{'='*60}\n")
-    
     strategies = [
         ("Shortest Distance", route_shortest_distance),
         ("Fastest Time", route_fastest_time),
         ("Lowest Carbon", route_lowest_carbon),
         ("Lowest Emissions (Vehicle-Aware)", route_lowest_emissions),
-        ("Balanced (50% carbon, 30% time, 20% distance)", 
+        ("Balanced (50% carbon, 30% time, 20% distance)",
          lambda g, o, d: route_balanced(g, o, d, 0.5, 0.3, 0.2))
     ]
-    
+
     results = []
     routes_for_plot: Dict[str, List[int]] = {}
-    
+
     for strategy_name, route_func in strategies:
         try:
             route = route_func(G, origin, destination)
             stats = calculate_route_stats(G, route)
-            
-            print(f"📍 {strategy_name}")
-            print(f"   Distance: {stats['distance_km']:.2f} km")
-            print(f"   Time: {stats['time_minutes']:.2f} minutes")
-            print(f"   Carbon Footprint: {stats['carbon_footprint']:.2f}")
-            if stats['emission_cost_g'] > 0:
-                print(f"   Emission Cost: {stats['emission_cost_g']:.2f} g")
-            print(f"   Avg Speed: {stats['avg_speed_kmh']:.2f} km/h")
-            print(f"   Segments: {stats['num_segments']}")
-            print()
-            
             results.append({
                 'strategy': strategy_name,
                 **stats
             })
             routes_for_plot[strategy_name] = route
         except nx.NetworkXNoPath:
-            print(f"❌ {strategy_name}: No path found\n")
-    
-    # Find best eco-route
-    if results:
-        best_eco = min(results, key=lambda x: x['carbon_footprint'])
+            continue
+
+    best_eco = min(results, key=lambda x: x['carbon_footprint']) if results else None
+
+    return {
+        "origin": origin,
+        "destination": destination,
+        "results": results,
+        "best_eco": best_eco,
+        "routes_for_plot": routes_for_plot,
+    }
+
+
+def compare_routes(origin, destination, plot_path: Optional[str] = None, show_plot: bool = False):
+    """Compare different routing strategies"""
+    payload = compare_routes_data(origin, destination)
+
+    print(f"\n{'='*60}")
+    print(f"Route Comparison: Origin {origin} → Destination {destination}")
+    print(f"{'='*60}\n")
+
+    for item in payload["results"]:
+        print(f"📍 {item['strategy']}")
+        print(f"   Distance: {item['distance_km']:.2f} km")
+        print(f"   Time: {item['time_minutes']:.2f} minutes")
+        print(f"   Carbon Footprint: {item['carbon_footprint']:.2f}")
+        if item['emission_cost_g'] > 0:
+            print(f"   Emission Cost: {item['emission_cost_g']:.2f} g")
+        print(f"   Avg Speed: {item['avg_speed_kmh']:.2f} km/h")
+        print(f"   Segments: {item['num_segments']}")
+        print()
+
+    if payload["best_eco"] is not None:
+        best_eco = payload["best_eco"]
         print(f"🌱 RECOMMENDED ECO-ROUTE: {best_eco['strategy']}")
-        print(f"   Saves {results[0]['carbon_footprint'] - best_eco['carbon_footprint']:.2f} carbon units")
+        print(
+            f"   Saves {payload['results'][0]['carbon_footprint'] - best_eco['carbon_footprint']:.2f} carbon units"
+        )
 
     if plot_path:
-        _plot_route_comparison(routes_for_plot, plot_path, show_plot)
+        _plot_route_comparison(payload["routes_for_plot"], plot_path, show_plot)
         print(f"\nSaved route comparison plot: {plot_path}")
-    
-    return results
+
+    return payload["results"]
 
 # ----------------------------
 # Interactive mode

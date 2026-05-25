@@ -9,6 +9,7 @@ This folder keeps the project documentation in one place.
 - [Phase 2: Emission Integration](PHASE_2_EMISSIONS.md)
 - [Phase 2: Implementation Guide](PHASE_2_IMPLEMENTATION.md)
 - [Phase 3: SUMO Integration](PHASE_3_SUMO.md)
+- [Phase 4: Backend APIs](PHASE_4_BACKEND_API.md)
 - [Algorithms Reference](ALGORITHMS.md)
 - [Architecture and Implementation Plan](../ARCHITECTURE_AND_IMPLEMENTATION_PLAN.md)
 

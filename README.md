@@ -39,6 +39,19 @@ python pipeline.py
 python eco_routing.py --src <origin_node_id> --dest <destination_node_id> --plot route_compare.png
 ```
 
+### 6) Route API example (Phase 4)
+Start the API server:
+```bash
+python phase4/run_api.py
+```
+
+Compare routes:
+```bash
+curl -X POST http://127.0.0.1:5001/route/compare \
+   -H "Content-Type: application/json" \
+   -d '{"origin": 290731701, "destination": 13851397444, "plot_path": "route_compare_api.png"}'
+```
+
 ---
 
 ## 📦 Data & Large Files
