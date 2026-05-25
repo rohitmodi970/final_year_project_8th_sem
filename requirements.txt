@@ -1,0 +1,15 @@
+geopandas
+osmnx
+pandas
+numpy
+requests
+networkx
+joblib
+flask
+scikit-learn==1.6.1
+matplotlib
+traci
+sumolib
+eclipse-sumo
+shapely
+pyogrio
