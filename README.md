@@ -8,6 +8,69 @@ For the full documentation index, see [docs/README.md](docs/README.md).
 
 ---
 
+## 🧰 Quick Start (Local)
+
+### 1) Create a virtual environment
+```bash
+python -m venv .venv
+```
+
+### 2) Activate it
+```bash
+# PowerShell
+.\.venv\Scripts\Activate.ps1
+```
+
+### 3) Install dependencies
+If you have a `requirements.txt`, install from it:
+```bash
+pip install -r requirements.txt
+```
+
+Otherwise, see [docs/README.md](docs/README.md) for the dependency list and install manually.
+
+### 4) Run the main pipeline
+```bash
+python pipeline.py
+```
+
+### 5) Run eco-routing
+```bash
+python eco_routing.py --src <origin_node_id> --dest <destination_node_id> --plot route_compare.png
+```
+
+---
+
+## 📦 Data & Large Files
+
+This repo **does not** track large datasets or generated artifacts in Git to avoid GitHub file size limits.
+
+### Where to get the data
+1. Download the required datasets from Google Drive (project share). If you do not have access, ask the maintainer for the link.
+2. Extract all files into the project root so the file layout matches the expected paths.
+
+Expected top-level files after download:
+- `fused_roads*.csv`
+- `fused_roads*.geojson`
+- `kolkata.net.xml`, `traffic.rou.xml`, `kolkata.sumocfg`
+- `emissions.xml`, `summary.xml`, `tripinfo.xml`
+
+### Why files are ignored
+Large files like `kolkata.net.xml` and `fused_roads*.geojson` exceed GitHub limits.
+They are excluded via [.gitignore](.gitignore). If you need to version them, use Git LFS.
+
+---
+
+## 🗂️ Project Structure (Important)
+
+- `pipeline.py` → end-to-end pipeline runner
+- `phase1/`, `phase2/`, `phase3/` → modular pipeline stages
+- `sumo_integration.py` → SUMO setup + simulation
+- `eco_routing.py` → route comparison and visualization
+- `docs/` → full documentation
+
+---
+
 ## 📌 Project Overview
 
 ### The Problem 🚗💨
